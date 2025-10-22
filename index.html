@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Iframe </title>
+  <!--
+    Responsive YouTube Iframe Gallery
+    - Default iframe loads a YouTube video on page load
+    - Add Iframe button creates a new iframe card with an URL input and remove button
+    - Each iframe is responsive (16:9) using CSS aspect-ratio and fluid widths
+    - Gray / black / white color scheme and subtle 3D hover/entry animations
+    - Remove animation plays before the element is detached from DOM
+  -->
+  <style>
+    :root{
+      --bg:#0f0f10;
+      --panel:#1b1b1c;
+      --muted:#9aa0a6;
+      --accent:#ffffff;
+      --glass: rgba(255,255,255,0.03);
+      --card-shadow: 0 10px 30px rgba(2,6,23,0.6);
+      --radius:14px;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    }
+
+    /* Page layout */
+    html,body{height:100%;}
+    body{
+      margin:0;
+      background: linear-gradient(180deg, #0b0b0c 0%, #121214 100%);
+      color:var(--accent);
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      display:flex;
+      align-items:flex-start;
+      justify-content:center;
+      padding:32px 20px;
+    }
+
+    .wrap{
+      width:100%;
+      max-width:1100px;
+      display:flex;
+      flex-direction:column;
+      gap:20px;
+    }
+
+    header{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+    }
+
+    .brand{
+      display:flex;
+      gap:12px;
+      align-items:center;
+    }
+
+    .logo{
+      width:48px;height:48px;border-radius:10px;background:linear-gradient(135deg,#2a2a2a,#111);display:flex;align-items:center;justify-content:center;box-shadow:var(--card-shadow);
+      transform:translateZ(0);
+    }
+    .logo strong{font-size:16px;color:var(--accent)}
+
+    h1{font-size:20px;margin:0;font-weight:600}
+    p.lead{margin:0;color:var(--muted);font-size:13px}
+
+    /* Controls */
+    .controls{display:flex;gap:10px;align-items:center}
+    .btn{
+      border:0;padding:10px 16px;border-radius:10px;background:linear-gradient(180deg,#2c2c2d,#161616);color:var(--accent);cursor:pointer;font-weight:600;box-shadow:0 6px 18px rgba(0,0,0,0.6);transform:translateZ(0);transition:transform 220ms cubic-bezier(.2,.9,.3,1), box-shadow 220ms;
+      will-change:transform;
+    }
+    .btn:active{transform:translateY(1px) translateZ(0) scale(.997)}
+
+    /* Subtle 3D hover lift */
+    .btn:hover{transform:translateY(-6px) translateZ(12px);box-shadow:0 18px 40px rgba(2,6,23,0.7)}
+
+    /* Grid for iframe cards */
+    .grid{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap:18px;
+    }
+
+    /* Cards */
+    .card{
+      background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border-radius:var(--radius);padding:14px;box-shadow:var(--card-shadow);backdrop-filter: blur(6px);transition:transform 360ms cubic-bezier(.2,.9,.3,1), opacity 260ms, filter 260ms;transform-origin:center top;overflow:hidden;
+      border:1px solid rgba(255,255,255,0.03);
+      display:flex;flex-direction:column;gap:12px;
+      animation:cardEnter 320ms ease both;
+    }
+
+    @keyframes cardEnter{from{opacity:0;transform:translateY(6px) scale(.995) translateZ(-12px)}to{opacity:1;transform:translateY(0) scale(1) translateZ(0)}}
+
+    /* Remove animation will be applied via a .removing class */
+    .card.removing{animation:cardRemove 380ms ease both}
+    @keyframes cardRemove{from{opacity:1;transform:translateY(0) scale(1)}to{opacity:0;transform:translateY(8px) scale(.985) rotateX(8deg) translateZ(-20px)}}
+
+    .card .meta{display:flex;align-items:center;justify-content:space-between;gap:10px}
+    .card .meta .title{font-weight:700}
+    .card .meta .actions{display:flex;gap:8px}
+
+    /* Input row */
+    .row{display:flex;gap:8px;align-items:center}
+    input[type="url"], input[type="text"]{flex:1;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:var(--accent);outline:none;font-size:14px}
+    input::placeholder{color:var(--muted)}
+
+    .remove-btn{background:linear-gradient(180deg,#341b1b,#2b1111);color:#fff;padding:8px 12px;border-radius:10px;border:0;font-weight:700;cursor:pointer;transition:transform 160ms}
+    .remove-btn:hover{transform:translateZ(16px) translateY(-4px)}
+
+    /* Responsive iframe wrapper - maintains 16:9 ratio */
+    .video-wrap{width:100%;aspect-ratio:16/9;background:var(--glass);border-radius:10px;overflow:hidden;border:1px solid rgba(255,255,255,0.03)}
+    .video-wrap iframe{width:100%;height:100%;border:0;display:block}
+
+    /* Footer legal */
+    footer{margin-top:12px;padding:18px;border-radius:12px;background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.005));display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;border:1px solid rgba(255,255,255,0.02)}
+    .legal{display:flex;gap:12px;align-items:center}
+    .legal a{color:var(--muted);text-decoration:none;font-size:13px}
+    .copyright{color:var(--muted);font-size:13px}
+
+    /* Desktop layout: cards in two columns when enough space */
+    @media(min-width:900px){
+      .grid{grid-template-columns: repeat(2, 1fr)}
+    }
+
+    @media(min-width:1200px){
+      .grid{grid-template-columns: repeat(2, 1fr)}
+    }
+
+    /* Small screens tweak */
+    @media(max-width:460px){
+      body{padding:18px}
+      .logo{width:40px;height:40px}
+    }
+
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="brand">
+        <div class="logo"><strong>IF</strong></div>
+        <div>
+          <h1> Iframe </h1>
+          
+        </div>
+      </div>
+
+      <div class="controls">
+        <!-- Add Iframe Button -->
+        <button id="addBtn" class="btn" title="Add a new iframe card">➕ Add Iframe</button>
+        <!-- Quick example: convert a normal YouTube link into an embeddable URL -->
+        <button id="helpBtn" class="btn" title="Example URLs and tips">💡 Tips</button>
+      </div>
+    </header>
+
+    <!-- Grid container that holds iframe cards -->
+    <main>
+      <div id="grid" class="grid" aria-live="polite"></div>
+    </main>
+
+    <!-- Footer with legal links -->
+    <footer>
+      <div class="legal">
+        <a href="#" onclick="alert('Help: Paste a YouTube link (https://www.youtube.com/watch?v=VIDEO_ID) or an embed link (https://www.youtube.com/embed/VIDEO_ID)')">Help</a>
+        <a href="#" onclick="alert('Terms of Service: This is a demo site — replace with your own terms.')">Terms</a>
+        <a href="#" onclick="alert('Privacy Policy: This is a demo site — replace with your actual policy.')">Privacy</a>
+      </div>
+      <div class="copyright">© <span id="year"></span> YourSite — All rights reserved</div>
+    </footer>
+  </div>
+
+  <script>
+    // Utility: convert common YouTube URLs to embed URL
+    function toEmbedUrl(url){
+      try{
+        if(!url) return '';
+        // Accept when users paste full youtube watch URL or short youtu.be or embed already
+        let u = url.trim();
+        // If user typed something like "https://youtu.be/VIDEOID"
+        const short = /youtu\.be\/([A-Za-z0-9_-]{6,})/i.exec(u);
+        if(short) return `https://www.youtube.com/embed/${short[1]}`;
+        // If full watch URL
+        const watch = /[?&]v=([A-Za-z0-9_-]{6,})/.exec(u);
+        if(watch) return `https://www.youtube.com/embed/${watch[1]}`;
+        // If already embed
+        const embed = /youtube\.com\/embed\/([A-Za-z0-9_-]{6,})/.exec(u);
+        if(embed) return `https://www.youtube.com/embed/${embed[1]}`;
+        // If it's just an ID (user pasted ID)
+        const idOnly = /^([A-Za-z0-9_-]{6,})$/.exec(u);
+        if(idOnly) return `https://www.youtube.com/embed/${idOnly[1]}`;
+        // Otherwise return as-is (browser will try but may be blocked by YouTube)
+        return u;
+      }catch(e){
+        return url;
+      }
+    }
+
+    // Keep track of created cards
+    const grid = document.getElementById('grid');
+    const addBtn = document.getElementById('addBtn');
+    const helpBtn = document.getElementById('helpBtn');
+    const yearSpan = document.getElementById('year');
+    yearSpan.textContent = new Date().getFullYear();
+
+    // Default video (loads on page open)
+    const DEFAULT_VIDEO = 'https://www.youtube.com/watch?v=IXIf7xnrivE'; // replaceable
+
+    // Create a new iframe card. url may be empty string for user to fill
+    function createCard(url, title){
+      const card = document.createElement('section');
+      card.className = 'card';
+
+      // meta row with title and remove button
+      const meta = document.createElement('div'); meta.className = 'meta';
+      const t = document.createElement('div'); t.className = 'title'; t.textContent = title || 'YouTube Video';
+      const actions = document.createElement('div'); actions.className = 'actions';
+      const remove = document.createElement('button'); remove.className = 'remove-btn'; remove.textContent = 'Remove';
+      remove.type = 'button';
+      actions.appendChild(remove);
+      meta.appendChild(t); meta.appendChild(actions);
+
+      // input row to allow user to paste URL
+      const row = document.createElement('div'); row.className = 'row';
+      const input = document.createElement('input'); input.type = 'url'; input.placeholder = 'Paste YouTube URL or ID here'; input.value = url || '';
+      row.appendChild(input);
+
+      // convert and load button
+      const loadBtn = document.createElement('button'); loadBtn.className = 'btn'; loadBtn.textContent = 'Load';
+      row.appendChild(loadBtn);
+
+      // video container
+      const vwrap = document.createElement('div'); vwrap.className = 'video-wrap';
+      const iframe = document.createElement('iframe');
+      iframe.setAttribute('loading','lazy');
+      iframe.setAttribute('allow','accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture');
+      iframe.setAttribute('allowfullscreen','');
+      // If initial url present, convert to embed and set src
+      if(url){ iframe.src = toEmbedUrl(url); }
+      vwrap.appendChild(iframe);
+
+      // Event: when Load clicked, convert input and set iframe src
+      loadBtn.addEventListener('click', ()=>{
+        const embed = toEmbedUrl(input.value);
+        iframe.src = embed;
+        // update title (try to show the ID)
+        const idMatch = /embed\/([A-Za-z0-9_-]{6,})/.exec(embed) || /v=([A-Za-z0-9_-]{6,})/.exec(input.value);
+        if(idMatch) t.textContent = 'Video • ' + idMatch[1];
+      });
+
+      // Also allow pressing Enter in input to load
+      input.addEventListener('keydown',(e)=>{ if(e.key === 'Enter'){ e.preventDefault(); loadBtn.click(); }});
+
+      // Remove with animation; wait for animation end to remove from DOM
+      remove.addEventListener('click', ()=>{
+        card.classList.add('removing');
+        // When remove animation finishes remove element
+        card.addEventListener('animationend', ()=>{ if(card.parentNode) card.parentNode.removeChild(card); }, {once:true});
+      });
+
+      // Append pieces to card
+      card.appendChild(meta);
+      card.appendChild(row);
+      card.appendChild(vwrap);
+
+      // subtle 3D tilt on hover
+      card.addEventListener('mousemove',(e)=>{
+        const r = card.getBoundingClientRect();
+        const cx = r.left + r.width/2; const cy = r.top + r.height/2;
+        const dx = (e.clientX - cx)/r.width; const dy = (e.clientY - cy)/r.height;
+        // small rotate based on cursor
+        card.style.transform = `perspective(600px) translateZ(0) rotateX(${ -dy*4 }deg) rotateY(${ dx*4 }deg)`;
+      });
+      card.addEventListener('mouseleave',()=>{ card.style.transform = ''; });
+
+      // Insert card into grid
+      grid.appendChild(card);
+
+      // focus input for immediate editing
+      setTimeout(()=> input.focus(),120);
+
+      return card;
+    }
+
+    // Setup default card on load
+    document.addEventListener('DOMContentLoaded', ()=>{
+      createCard(DEFAULT_VIDEO, 'IFRAME');
+    });
+
+    // Add button creates an empty card
+    addBtn.addEventListener('click', ()=>{
+      
+      createCard('', 'New IFRAME');
+    });
+
+    // Help tips button — shows small examples and tips
+    helpBtn.addEventListener('click', ()=>{
+      alert('Example inputs:\n• Full URL: https://www.youtube.com/watch?v=dQw4w9WgXcQ\n• Short: https://youtu.be/dQw4w9WgXcQ\n• ID only: dQw4w9WgXcQ\n• Embed URL: https://www.youtube.com/embed/dQw4w9WgXcQ\n\nClick Load after pasting to convert and load into the iframe.');
+    });
+
+    // Accessibility: allow keyboard shortcut to add (Alt+A)
+    window.addEventListener('keydown',(e)=>{ if(e.altKey && (e.key === 'a' || e.key === 'A')){ e.preventDefault(); addBtn.click(); }});
+
+    // --- END of script ---
+  </script>
+</body>
+</html>
